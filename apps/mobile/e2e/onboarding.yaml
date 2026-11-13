@@ -1,0 +1,17 @@
+appId: com.jonxsong.orbit
+name: Complete onboarding and create the first plan
+---
+- launchApp:
+    clearState: true
+- assertVisible: "Make today mean something."
+- tapOn: "Continue"
+- tapOn: "Run my first half marathon"
+- inputText: "Run a half marathon"
+- tapOn: "Run a comfortable 5K"
+- inputText: "Run a comfortable 5K"
+- tapOn: "Continue"
+- tapOn: "Run three times each week"
+- inputText: "Run three times each week"
+- tapOn: "Begin my Orbit"
+- assertVisible: "Today's priorities"
+

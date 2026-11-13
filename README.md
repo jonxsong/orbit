@@ -68,8 +68,7 @@ Windows can run linting, TypeScript tests, backend tests, and Expo web tooling, 
 ```bash
 cp .env.example .env.local
 pnpm install
-docker compose up -d postgres
-pnpm api:run
+docker compose up --build
 pnpm ios
 ```
 
@@ -84,6 +83,17 @@ The mobile app remains useful without the API. Set `EXPO_PUBLIC_API_URL` only wh
 
 Expo Go is the fastest daily loop. Before TestFlight or App Store submission, create a signed development build with EAS and verify notifications, Keychain, background behavior, accessibility, and release configuration on the physical phone.
 
+### Run the optional API
+
+The iPhone app does not need the API for local use. To exercise account-backed sync and server recommendations:
+
+```bash
+docker compose up --build
+curl http://localhost:8080/health/ready
+```
+
+The Compose stack starts PostgreSQL, applies versioned migrations, and then starts the Go API. Development uses the explicit `ORBIT_DEV_USER_ID`; production refuses that bypass and requires a configured OIDC issuer and audience.
+
 ## Verification
 
 ```bash
@@ -93,6 +103,8 @@ pnpm test
 go test ./...
 docker compose config
 ```
+
+Verified in the current Windows environment: TypeScript checking, ESLint, Jest domain tests, Go vet/tests, and an Expo production iOS bundle. Native compilation, Maestro, notifications, Keychain behavior, and physical-device accessibility still require the planned Mac/iPhone pass.
 
 ## Mobile builds
 

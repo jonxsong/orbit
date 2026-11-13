@@ -10,8 +10,9 @@
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
     "verify": "pnpm lint && pnpm typecheck && pnpm test",
-    "api:test": "go test ./...",
-    "api:run": "go run ./services/api/cmd/api"
+    "api:test": "cd services/api && go test ./...",
+    "api:run": "cd services/api && go run ./cmd/api",
+    "api:migrate": "cd services/api && go run ./cmd/migrate ./migrations"
   }
 }
 

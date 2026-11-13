@@ -1,0 +1,318 @@
+openapi: 3.1.0
+info:
+  title: Orbit API
+  version: 0.1.0
+  description: Optional cloud synchronization and recommendation API for Orbit.
+servers:
+  - url: https://api.example.com
+security:
+  - bearerAuth: []
+paths:
+  /health/live:
+    get:
+      security: []
+      operationId: live
+      responses:
+        '200':
+          description: Process is live.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+  /health/ready:
+    get:
+      security: []
+      operationId: ready
+      responses:
+        '200':
+          description: API and database are ready.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+        '503':
+          $ref: '#/components/responses/Error'
+  /v1/sync/push:
+    post:
+      operationId: pushMutations
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PushRequest'
+      responses:
+        '200':
+          description: Per-mutation acknowledgements in request order.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PushResponse'
+        '401':
+          $ref: '#/components/responses/Error'
+        '422':
+          $ref: '#/components/responses/Error'
+  /v1/sync/pull:
+    get:
+      operationId: pullChanges
+      parameters:
+        - name: after
+          in: query
+          schema:
+            type: integer
+            format: int64
+            minimum: 0
+            default: 0
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 500
+      responses:
+        '200':
+          description: Incremental, owner-scoped change batch.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PullResponse'
+        '401':
+          $ref: '#/components/responses/Error'
+  /v1/recommendations/evaluate:
+    post:
+      operationId: evaluateRecommendations
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlanningSnapshot'
+      responses:
+        '200':
+          description: Deterministic, pending recommendations.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [recommendations]
+                properties:
+                  recommendations:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Recommendation'
+  /v1/recommendations/ai:
+    post:
+      operationId: requestAIRecommendation
+      description: Builds one structured proposal. It never applies a change.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlanningSnapshot'
+      responses:
+        '200':
+          description: A schema-validated pending proposal.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Recommendation'
+        '503':
+          $ref: '#/components/responses/Error'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  responses:
+    Error:
+      description: Error response.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+  schemas:
+    Health:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+    ErrorEnvelope:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+    PushRequest:
+      type: object
+      additionalProperties: false
+      required: [device_id, schema_version, mutations]
+      properties:
+        device_id:
+          type: string
+          format: uuid
+        schema_version:
+          type: integer
+          const: 1
+        mutations:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/Mutation'
+    Mutation:
+      type: object
+      additionalProperties: false
+      required: [mutation_id, entity_type, entity_id, operation, base_version, fields]
+      properties:
+        mutation_id:
+          type: string
+          format: uuid
+        entity_type:
+          type: string
+          enum: [goal, milestone, task, habit, habit_completion, reflection, relationship, recommendation]
+        entity_id:
+          type: string
+          format: uuid
+        operation:
+          type: string
+          enum: [upsert, delete]
+        base_version:
+          type: integer
+          format: int64
+          minimum: 0
+        fields:
+          type: object
+          additionalProperties: true
+    PushResponse:
+      type: object
+      required: [results]
+      properties:
+        results:
+          type: array
+          items:
+            type: object
+            required: [mutation_id, status]
+            properties:
+              mutation_id:
+                type: string
+                format: uuid
+              status:
+                type: string
+                enum: [applied, conflict]
+              revision:
+                type: integer
+                format: int64
+              conflict:
+                type: object
+                additionalProperties: true
+    PullResponse:
+      type: object
+      required: [changes, next_cursor, has_more]
+      properties:
+        changes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Change'
+        next_cursor:
+          type: integer
+          format: int64
+        has_more:
+          type: boolean
+    Change:
+      type: object
+      required: [revision, entity_type, entity_id, operation, version]
+      properties:
+        revision:
+          type: integer
+          format: int64
+        entity_type:
+          type: string
+        entity_id:
+          type: string
+          format: uuid
+        operation:
+          type: string
+          enum: [upsert, delete]
+        version:
+          type: integer
+          format: int64
+        data:
+          type: object
+          additionalProperties: true
+    PlanningSnapshot:
+      type: object
+      additionalProperties: false
+      required: [active_goal_count, tasks, missed_habits, blocked_milestone_count]
+      properties:
+        active_goal_count:
+          type: integer
+          minimum: 0
+        tasks:
+          type: array
+          maxItems: 100
+          items:
+            type: object
+            additionalProperties: false
+            required: [id, title, completed]
+            properties:
+              id:
+                type: string
+              title:
+                type: string
+                maxLength: 200
+              due_date:
+                type: string
+                format: date
+              estimated_minutes:
+                type: integer
+                minimum: 0
+              completed:
+                type: boolean
+        missed_habits:
+          type: integer
+          minimum: 0
+        blocked_milestone_count:
+          type: integer
+          minimum: 0
+    Recommendation:
+      type: object
+      required: [type, title, explanation, evidence, proposed_action, confidence, limitations, status, source]
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        explanation:
+          type: string
+        evidence:
+          type: array
+          items:
+            type: string
+        proposed_action:
+          type: object
+          additionalProperties: true
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+        limitations:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          const: pending
+        source:
+          type: string
+          enum: [deterministic, ai]
+
