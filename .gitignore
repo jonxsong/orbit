@@ -39,3 +39,6 @@ Thumbs.db
 *.tfstate.*
 .terraform.lock.hcl
 
+# Separate ChatGPT Sites source checkouts
+sites/
+
