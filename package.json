@@ -1,0 +1,17 @@
+{
+  "name": "orbit",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@11.25.0",
+  "scripts": {
+    "dev:mobile": "pnpm --filter @orbit/mobile start",
+    "ios": "pnpm --filter @orbit/mobile ios",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "verify": "pnpm lint && pnpm typecheck && pnpm test",
+    "api:test": "go test ./...",
+    "api:run": "go run ./services/api/cmd/api"
+  }
+}
+
