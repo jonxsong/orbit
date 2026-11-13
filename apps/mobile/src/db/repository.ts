@@ -272,6 +272,51 @@ export async function createGoal(title: string): Promise<void> {
   });
 }
 
+export async function createMilestone(goalId: string, title: string): Promise<void> {
+  const milestoneId = id();
+  const timestamp = now();
+  await sqlite.withExclusiveTransactionAsync(async (tx) => {
+    await tx.runAsync(
+      `INSERT INTO milestones
+        (id, goal_id, title, weight, status, created_at, updated_at, version)
+       VALUES (?, ?, ?, 1, 'pending', ?, ?, 0)`,
+      milestoneId,
+      goalId,
+      title.trim(),
+      timestamp,
+      timestamp,
+    );
+    await enqueue(tx, 'milestone', milestoneId, 'upsert', {
+      goalId,
+      title: title.trim(),
+      weight: 1,
+      status: 'pending',
+    });
+  });
+}
+
+export async function createHabit(title: string): Promise<void> {
+  const habitId = id();
+  const timestamp = now();
+  await sqlite.withExclusiveTransactionAsync(async (tx) => {
+    await tx.runAsync(
+      `INSERT INTO habits
+        (id, goal_id, title, schedule, target_per_week, created_at, updated_at, version)
+       VALUES (?, NULL, ?, 'weekly', 3, ?, ?, 0)`,
+      habitId,
+      title.trim(),
+      timestamp,
+      timestamp,
+    );
+    await enqueue(tx, 'habit', habitId, 'upsert', {
+      goalId: null,
+      title: title.trim(),
+      schedule: 'weekly',
+      targetPerWeek: 3,
+    });
+  });
+}
+
 export async function toggleTask(taskId: string): Promise<void> {
   const current = await sqlite.getFirstAsync<{ status: string }>(
     `SELECT status FROM tasks WHERE id = ? AND deleted_at IS NULL`,

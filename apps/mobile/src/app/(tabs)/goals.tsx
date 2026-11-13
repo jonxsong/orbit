@@ -14,9 +14,12 @@ import { useAppTheme } from '../../theme/theme';
 export default function GoalsScreen() {
   const [showCreate, setShowCreate] = useState(false);
   const [title, setTitle] = useState('');
+  const [milestoneGoalId, setMilestoneGoalId] = useState<string | null>(null);
+  const [milestoneTitle, setMilestoneTitle] = useState('');
   const { t } = useI18n();
   const goals = useOrbitStore((state) => state.goals);
   const addGoal = useOrbitStore((state) => state.addGoal);
+  const addMilestone = useOrbitStore((state) => state.addMilestone);
   const milestones = useOrbitStore((state) => state.milestones);
   const toggleMilestone = useOrbitStore((state) => state.toggleMilestone);
   const busy = useOrbitStore((state) => state.busy);
@@ -27,6 +30,13 @@ export default function GoalsScreen() {
     await addGoal(title);
     setTitle('');
     setShowCreate(false);
+  };
+
+  const createMilestone = async () => {
+    if (!milestoneGoalId || milestoneTitle.trim().length < 3) return;
+    await addMilestone(milestoneGoalId, milestoneTitle);
+    setMilestoneTitle('');
+    setMilestoneGoalId(null);
   };
 
   return (
@@ -124,6 +134,14 @@ export default function GoalsScreen() {
                   ))}
                 </View>
               ) : null}
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => setMilestoneGoalId(goal.id)}
+                style={[styles.addMilestone, { marginTop: spacing.md }]}
+              >
+                <SymbolView name="plus.circle" size={19} tintColor={colors.textMuted} />
+                <AppText variant="caption" muted>{t('addMilestone')}</AppText>
+              </Pressable>
             </Card>
           )})}
         </View>
@@ -152,6 +170,30 @@ export default function GoalsScreen() {
           </View>
         </View>
       </Modal>
+
+      <Modal visible={milestoneGoalId != null} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setMilestoneGoalId(null)}>
+        <View style={[styles.modal, { backgroundColor: colors.background, padding: spacing.lg }]}>
+          <View style={styles.modalHeader}>
+            <Pressable onPress={() => setMilestoneGoalId(null)} style={styles.closeButton} accessibilityRole="button">
+              <SymbolView name="xmark" size={20} tintColor={colors.text} />
+            </Pressable>
+            <AppText variant="heading">{t('addMilestone')}</AppText>
+            <View style={styles.closeButton} />
+          </View>
+          <TextInput
+            autoFocus
+            maxLength={120}
+            placeholder={t('newMilestonePlaceholder')}
+            placeholderTextColor={colors.textMuted}
+            value={milestoneTitle}
+            onChangeText={setMilestoneTitle}
+            style={[styles.input, { color: colors.text, backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radius.md }]}
+          />
+          <View style={{ marginTop: 'auto' }}>
+            <Button onPress={() => void createMilestone()} loading={busy} disabled={milestoneTitle.trim().length < 3}>{t('saveMilestone')}</Button>
+          </View>
+        </View>
+      </Modal>
     </>
   );
 }
@@ -167,6 +209,7 @@ const styles = StyleSheet.create({
   progressFill: { height: 8, borderRadius: 4 },
   milestoneList: { borderTopWidth: StyleSheet.hairlineWidth, gap: 8 },
   milestoneRow: { minHeight: 42, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  addMilestone: { minHeight: 42, flexDirection: 'row', alignItems: 'center', gap: 8 },
   modal: { flex: 1 },
   modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 36 },
   closeButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },

@@ -24,6 +24,8 @@ type OrbitStore = OrbitSnapshot & {
   completeOnboarding: (input: OnboardingInput) => Promise<void>;
   addTask: (input: { title: string; goalId: string | null; estimatedMinutes: number }) => Promise<void>;
   addGoal: (title: string) => Promise<void>;
+  addMilestone: (goalId: string, title: string) => Promise<void>;
+  addHabit: (title: string) => Promise<void>;
   toggleTask: (taskId: string) => Promise<void>;
   updateTask: (taskId: string, input: { title: string; dueDate: string; estimatedMinutes: number }) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
@@ -75,6 +77,8 @@ export const useOrbitStore = create<OrbitStore>((set) => {
     completeOnboarding: (input) => mutate(() => repository.completeOnboarding(input)),
     addTask: (input) => mutate(() => repository.createTask(input)),
     addGoal: (title) => mutate(() => repository.createGoal(title)),
+    addMilestone: (goalId, title) => mutate(() => repository.createMilestone(goalId, title)),
+    addHabit: (title) => mutate(() => repository.createHabit(title)),
     toggleTask: (taskId) => mutate(() => repository.toggleTask(taskId)),
     updateTask: (taskId, input) => mutate(() => repository.updateTask(taskId, input)),
     deleteTask: (taskId) => mutate(() => repository.deleteTask(taskId)),

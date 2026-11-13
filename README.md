@@ -37,12 +37,10 @@ Orbit is under active development. The repository currently targets Expo SDK 58,
 ```text
 apps/mobile/                 Expo Router iOS application
 services/api/                Go REST API and sync service
-packages/contracts/          Shared protocol types and schemas
-packages/design-tokens/      Product color, spacing, and typography tokens
-infrastructure/docker/       Local container configuration
 infrastructure/terraform/    Deployment configuration
 docs/architecture/           System, sync, data, security, and AI design
 docs/decisions/              Architecture decision records
+docker-compose.yml           Local PostgreSQL + API stack
 ```
 
 ## How Orbit works
@@ -100,7 +98,7 @@ The Compose stack starts PostgreSQL, applies versioned migrations, and then star
 pnpm lint
 pnpm typecheck
 pnpm test
-go test ./...
+pnpm api:test
 docker compose config
 ```
 
@@ -133,11 +131,23 @@ Production submission still requires an Apple Developer account, final bundle id
 - Local SQLite is not described as encrypted; highly sensitive tokens are stored separately in Keychain.
 - The initial sync conflict policy merges independent fields and surfaces same-field conflicts; rich-text collaborative merging is not attempted.
 
-## Roadmap
+## What is implemented
 
-1. Offline-first onboarding and daily planning
-2. Goals, milestones, habits, and reflections
-3. Account linking and multi-device synchronization
-4. Life Graph and adaptive recommendations
-5. App Store hardening, accessibility audit, and signed release
+- Bilingual English / Simplified Chinese onboarding and application UI
+- Offline task creation, completion, editing, rescheduling, and deletion
+- Goals with deterministic milestone progress and an explorable Life Graph
+- Habit creation and non-punitive daily completion
+- Private daily reflections
+- Local iOS planning reminders
+- Durable mutation outbox, SecureStore device identity, incremental push/pull, and conflict capture
+- OIDC-protected Go API, PostgreSQL schema, deterministic recommendations, and approval-gated AI proposals
+- CI, Maestro journey, EAS profiles, Docker Compose, OpenAPI, and Google Cloud Terraform
+
+## Road to TestFlight
+
+1. Run the documented Mac + iPhone device pass and fix any native-only issues.
+2. Choose and configure the production OIDC provider.
+3. Link an EAS project and Apple Developer account.
+4. Complete privacy nutrition labels, screenshots, and App Store metadata.
+5. Produce a signed internal build, complete accessibility QA, then promote to TestFlight.
 
