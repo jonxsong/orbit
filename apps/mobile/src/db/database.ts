@@ -147,6 +147,14 @@ export async function initializeDatabase(): Promise<void> {
       value TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS sync_conflicts (
+      mutation_id TEXT PRIMARY KEY NOT NULL,
+      entity_type TEXT NOT NULL,
+      entity_id TEXT NOT NULL,
+      conflict_json TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+
     INSERT OR IGNORE INTO app_settings(key, value) VALUES ('language', 'en');
     INSERT OR IGNORE INTO app_settings(key, value) VALUES ('onboarding_complete', 'false');
     PRAGMA user_version = 1;

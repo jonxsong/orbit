@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import { SymbolView } from 'expo-symbols';
 import { AppText } from '../../components/app-text';
+import { Button } from '../../components/button';
 import { Card } from '../../components/card';
 import { Screen } from '../../components/screen';
 import type { Language } from '../../domain/types';
@@ -11,6 +12,9 @@ import { useAppTheme } from '../../theme/theme';
 export default function ProfileScreen() {
   const { language, t } = useI18n();
   const changeLanguage = useOrbitStore((state) => state.changeLanguage);
+  const syncNow = useOrbitStore((state) => state.syncNow);
+  const syncStatus = useOrbitStore((state) => state.syncStatus);
+  const lastSyncedAt = useOrbitStore((state) => state.lastSyncedAt);
   const { colors, spacing, radius } = useAppTheme();
 
   const languageOption = (value: Language, label: string) => {
@@ -69,8 +73,25 @@ export default function ProfileScreen() {
             </View>
             <View style={styles.infoCopy}>
               <AppText variant="heading">{t('cloudSync')}</AppText>
-              <AppText variant="caption" muted>{t('comingSoon')}</AppText>
+              <AppText variant="caption" muted>
+                {syncStatus === 'syncing'
+                  ? t('syncing')
+                  : syncStatus === 'success'
+                    ? lastSyncedAt
+                      ? t('lastSynced', { time: new Date(lastSyncedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) })
+                      : t('synced')
+                    : syncStatus === 'disabled'
+                      ? t('syncUnavailable')
+                      : syncStatus === 'error'
+                        ? t('syncFailed')
+                        : t('comingSoon')}
+              </AppText>
             </View>
+          </View>
+          <View style={{ marginTop: spacing.lg }}>
+            <Button variant="secondary" loading={syncStatus === 'syncing'} onPress={() => void syncNow()}>
+              {syncStatus === 'syncing' ? t('syncing') : t('syncNow')}
+            </Button>
           </View>
         </Card>
         <Card>

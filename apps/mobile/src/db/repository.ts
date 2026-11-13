@@ -295,6 +295,25 @@ export async function toggleTask(taskId: string): Promise<void> {
   });
 }
 
+export async function toggleMilestone(milestoneId: string): Promise<void> {
+  const current = await sqlite.getFirstAsync<{ status: string; version: number }>(
+    `SELECT status, version FROM milestones WHERE id = ? AND deleted_at IS NULL`,
+    milestoneId,
+  );
+  if (!current) return;
+  const status = current.status === 'completed' ? 'pending' : 'completed';
+  const timestamp = now();
+  await sqlite.withExclusiveTransactionAsync(async (tx) => {
+    await tx.runAsync(
+      `UPDATE milestones SET status = ?, updated_at = ? WHERE id = ?`,
+      status,
+      timestamp,
+      milestoneId,
+    );
+    await enqueue(tx, 'milestone', milestoneId, 'upsert', { status });
+  });
+}
+
 export async function toggleHabit(habitId: string): Promise<void> {
   const occurrenceKey = localDateKey();
   const existing = await sqlite.getFirstAsync<{ id: string }>(

@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { SymbolView } from 'expo-symbols';
+import { Link } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import { AppText } from '../../components/app-text';
 import { Button } from '../../components/button';
 import { Card } from '../../components/card';
@@ -15,6 +17,8 @@ export default function GoalsScreen() {
   const { t } = useI18n();
   const goals = useOrbitStore((state) => state.goals);
   const addGoal = useOrbitStore((state) => state.addGoal);
+  const milestones = useOrbitStore((state) => state.milestones);
+  const toggleMilestone = useOrbitStore((state) => state.toggleMilestone);
   const busy = useOrbitStore((state) => state.busy);
   const { colors, spacing, radius } = useAppTheme();
 
@@ -45,8 +49,33 @@ export default function GoalsScreen() {
           </View>
         }
       >
+        <Link href="/life-graph" asChild>
+          <Pressable
+            accessibilityRole="button"
+            style={({ pressed }) => [
+              styles.graphLink,
+              {
+                backgroundColor: colors.sageSoft,
+                borderRadius: radius.md,
+                opacity: pressed ? 0.72 : 1,
+                marginBottom: spacing.lg,
+              },
+            ]}
+          >
+            <View style={[styles.goalIcon, { backgroundColor: colors.surface }]}>
+              <SymbolView name="point.3.connected.trianglepath.dotted" size={24} tintColor={colors.sage} />
+            </View>
+            <View style={{ flex: 1, gap: 4 }}>
+              <AppText variant="label">{t('lifeGraph')}</AppText>
+              <AppText variant="caption" muted>{t('lifeGraphBody')}</AppText>
+            </View>
+            <SymbolView name="chevron.right" size={18} tintColor={colors.textMuted} />
+          </Pressable>
+        </Link>
         <View style={{ gap: spacing.md }}>
-          {goals.map((goal, index) => (
+          {goals.map((goal, index) => {
+            const goalMilestones = milestones.filter((milestone) => milestone.goalId === goal.id);
+            return (
             <Card key={goal.id} style={index === 0 ? { backgroundColor: colors.accentSoft, borderColor: 'transparent' } : undefined}>
               <View style={styles.goalTop}>
                 <View style={[styles.goalIcon, { backgroundColor: index === 0 ? colors.surface : colors.sageSoft }]}>
@@ -67,8 +96,36 @@ export default function GoalsScreen() {
               ) : (
                 <AppText variant="caption" muted style={{ marginTop: spacing.md }}>{t('noMilestones')}</AppText>
               )}
+              {goalMilestones.length > 0 ? (
+                <View style={[styles.milestoneList, { borderTopColor: colors.border, marginTop: spacing.lg, paddingTop: spacing.md }]}>
+                  {goalMilestones.map((milestone) => (
+                    <Pressable
+                      key={milestone.id}
+                      accessibilityRole="checkbox"
+                      accessibilityState={{ checked: milestone.status === 'completed' }}
+                      onPress={() => {
+                        void Haptics.selectionAsync();
+                        void toggleMilestone(milestone.id);
+                      }}
+                      style={styles.milestoneRow}
+                    >
+                      <SymbolView
+                        name={milestone.status === 'completed' ? 'checkmark.circle.fill' : 'circle'}
+                        size={22}
+                        tintColor={milestone.status === 'completed' ? colors.sage : colors.textMuted}
+                      />
+                      <AppText
+                        variant="label"
+                        style={milestone.status === 'completed' ? { color: colors.textMuted, textDecorationLine: 'line-through' } : undefined}
+                      >
+                        {milestone.title}
+                      </AppText>
+                    </Pressable>
+                  ))}
+                </View>
+              ) : null}
             </Card>
-          ))}
+          )})}
         </View>
       </Screen>
 
@@ -105,8 +162,11 @@ const styles = StyleSheet.create({
   iconButton: { width: 48, height: 48, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
   goalTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   goalIcon: { width: 46, height: 46, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
+  graphLink: { minHeight: 86, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 14 },
   progressTrack: { height: 8, borderRadius: 4, overflow: 'hidden' },
   progressFill: { height: 8, borderRadius: 4 },
+  milestoneList: { borderTopWidth: StyleSheet.hairlineWidth, gap: 8 },
+  milestoneRow: { minHeight: 42, flexDirection: 'row', alignItems: 'center', gap: 10 },
   modal: { flex: 1 },
   modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 36 },
   closeButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },

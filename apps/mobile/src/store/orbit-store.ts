@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { initializeDatabase } from '../db/database';
 import * as repository from '../db/repository';
 import type { Language, OnboardingInput, OrbitSnapshot } from '../domain/types';
+import { synchronize, SyncUnavailableError } from '../sync/client';
 
 const emptySnapshot: OrbitSnapshot = {
   language: 'en',
@@ -17,14 +18,18 @@ type OrbitStore = OrbitSnapshot & {
   initialized: boolean;
   busy: boolean;
   error: string | null;
+  syncStatus: 'idle' | 'syncing' | 'success' | 'error' | 'disabled';
+  lastSyncedAt: string | null;
   initialize: () => Promise<void>;
   completeOnboarding: (input: OnboardingInput) => Promise<void>;
   addTask: (input: { title: string; goalId: string | null; estimatedMinutes: number }) => Promise<void>;
   addGoal: (title: string) => Promise<void>;
   toggleTask: (taskId: string) => Promise<void>;
+  toggleMilestone: (milestoneId: string) => Promise<void>;
   toggleHabit: (habitId: string) => Promise<void>;
   saveReflection: (body: string) => Promise<void>;
   changeLanguage: (language: Language) => Promise<void>;
+  syncNow: () => Promise<void>;
   clearError: () => void;
 };
 
@@ -53,6 +58,8 @@ export const useOrbitStore = create<OrbitStore>((set) => {
     initialized: false,
     busy: false,
     error: null,
+    syncStatus: 'idle',
+    lastSyncedAt: null,
     initialize: async () => {
       try {
         await initializeDatabase();
@@ -67,11 +74,22 @@ export const useOrbitStore = create<OrbitStore>((set) => {
     addTask: (input) => mutate(() => repository.createTask(input)),
     addGoal: (title) => mutate(() => repository.createGoal(title)),
     toggleTask: (taskId) => mutate(() => repository.toggleTask(taskId)),
+    toggleMilestone: (milestoneId) => mutate(() => repository.toggleMilestone(milestoneId)),
     toggleHabit: (habitId) => mutate(() => repository.toggleHabit(habitId)),
     saveReflection: (body) => mutate(() => repository.saveReflection(body)),
     changeLanguage: async (language) => {
       await repository.setLanguage(language);
       set({ language });
+    },
+    syncNow: async () => {
+      set({ syncStatus: 'syncing' });
+      try {
+        const result = await synchronize();
+        await hydrate();
+        set({ syncStatus: 'success', lastSyncedAt: result.completedAt });
+      } catch (error) {
+        set({ syncStatus: error instanceof SyncUnavailableError ? 'disabled' : 'error' });
+      }
     },
     clearError: () => set({ error: null }),
   };
