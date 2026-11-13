@@ -1,4 +1,4 @@
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { SymbolView } from 'expo-symbols';
@@ -113,7 +113,12 @@ export default function TodayScreen() {
               ]}
             >
               <CheckControl checked={task.status === 'completed'} label={task.title} onPress={() => void handleTask(task.id)} />
-              <View style={styles.itemCopy}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={task.title}
+                onPress={() => router.push({ pathname: '/task/[id]', params: { id: task.id } })}
+                style={styles.itemCopy}
+              >
                 <AppText
                   variant="label"
                   style={task.status === 'completed' ? { textDecorationLine: 'line-through', color: colors.textMuted } : undefined}
@@ -121,7 +126,7 @@ export default function TodayScreen() {
                   {task.title}
                 </AppText>
                 {task.estimatedMinutes ? <AppText variant="caption" muted>{task.estimatedMinutes} min</AppText> : null}
-              </View>
+              </Pressable>
             </View>
           ))
         )}

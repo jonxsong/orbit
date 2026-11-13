@@ -295,6 +295,48 @@ export async function toggleTask(taskId: string): Promise<void> {
   });
 }
 
+export async function updateTask(
+  taskId: string,
+  input: { title: string; dueDate: string; estimatedMinutes: number },
+): Promise<void> {
+  const current = await sqlite.getFirstAsync<{ version: number }>(
+    `SELECT version FROM tasks WHERE id = ? AND deleted_at IS NULL`,
+    taskId,
+  );
+  if (!current) return;
+  const timestamp = now();
+  await sqlite.withExclusiveTransactionAsync(async (tx) => {
+    await tx.runAsync(
+      `UPDATE tasks
+       SET title = ?, due_date = ?, estimated_minutes = ?, updated_at = ?
+       WHERE id = ?`,
+      input.title.trim(),
+      input.dueDate,
+      input.estimatedMinutes,
+      timestamp,
+      taskId,
+    );
+    await enqueue(tx, 'task', taskId, 'upsert', {
+      title: input.title.trim(),
+      dueDate: input.dueDate,
+      estimatedMinutes: input.estimatedMinutes,
+    });
+  });
+}
+
+export async function deleteTask(taskId: string): Promise<void> {
+  const timestamp = now();
+  await sqlite.withExclusiveTransactionAsync(async (tx) => {
+    await tx.runAsync(
+      `UPDATE tasks SET deleted_at = ?, updated_at = ? WHERE id = ?`,
+      timestamp,
+      timestamp,
+      taskId,
+    );
+    await enqueue(tx, 'task', taskId, 'delete', {});
+  });
+}
+
 export async function toggleMilestone(milestoneId: string): Promise<void> {
   const current = await sqlite.getFirstAsync<{ status: string; version: number }>(
     `SELECT status, version FROM milestones WHERE id = ? AND deleted_at IS NULL`,

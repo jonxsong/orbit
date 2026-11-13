@@ -25,6 +25,8 @@ type OrbitStore = OrbitSnapshot & {
   addTask: (input: { title: string; goalId: string | null; estimatedMinutes: number }) => Promise<void>;
   addGoal: (title: string) => Promise<void>;
   toggleTask: (taskId: string) => Promise<void>;
+  updateTask: (taskId: string, input: { title: string; dueDate: string; estimatedMinutes: number }) => Promise<void>;
+  deleteTask: (taskId: string) => Promise<void>;
   toggleMilestone: (milestoneId: string) => Promise<void>;
   toggleHabit: (habitId: string) => Promise<void>;
   saveReflection: (body: string) => Promise<void>;
@@ -74,6 +76,8 @@ export const useOrbitStore = create<OrbitStore>((set) => {
     addTask: (input) => mutate(() => repository.createTask(input)),
     addGoal: (title) => mutate(() => repository.createGoal(title)),
     toggleTask: (taskId) => mutate(() => repository.toggleTask(taskId)),
+    updateTask: (taskId, input) => mutate(() => repository.updateTask(taskId, input)),
+    deleteTask: (taskId) => mutate(() => repository.deleteTask(taskId)),
     toggleMilestone: (milestoneId) => mutate(() => repository.toggleMilestone(milestoneId)),
     toggleHabit: (habitId) => mutate(() => repository.toggleHabit(habitId)),
     saveReflection: (body) => mutate(() => repository.saveReflection(body)),

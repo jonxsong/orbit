@@ -1,4 +1,5 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Pressable, StyleSheet, Switch, View } from 'react-native';
 import { SymbolView } from 'expo-symbols';
 import { AppText } from '../../components/app-text';
 import { Button } from '../../components/button';
@@ -7,6 +8,7 @@ import { Screen } from '../../components/screen';
 import type { Language } from '../../domain/types';
 import { useI18n } from '../../i18n/use-i18n';
 import { useOrbitStore } from '../../store/orbit-store';
+import { isDailyReminderEnabled, setDailyReminder } from '../../notifications/reminders';
 import { useAppTheme } from '../../theme/theme';
 
 export default function ProfileScreen() {
@@ -15,7 +17,28 @@ export default function ProfileScreen() {
   const syncNow = useOrbitStore((state) => state.syncNow);
   const syncStatus = useOrbitStore((state) => state.syncStatus);
   const lastSyncedAt = useOrbitStore((state) => state.lastSyncedAt);
+  const [reminderEnabled, setReminderEnabled] = useState(false);
+  const [reminderBusy, setReminderBusy] = useState(false);
   const { colors, spacing, radius } = useAppTheme();
+
+  useEffect(() => {
+    let active = true;
+    void isDailyReminderEnabled().then((enabled) => {
+      if (active) setReminderEnabled(enabled);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const toggleReminder = async (enabled: boolean) => {
+    setReminderBusy(true);
+    try {
+      setReminderEnabled(await setDailyReminder(enabled, language));
+    } finally {
+      setReminderBusy(false);
+    }
+  };
 
   const languageOption = (value: Language, label: string) => {
     const selected = language === value;
@@ -55,6 +78,25 @@ export default function ProfileScreen() {
       </View>
 
       <View style={{ gap: spacing.md, marginTop: spacing.xl }}>
+        <Card>
+          <View style={styles.infoRow}>
+            <View style={[styles.infoIcon, { backgroundColor: colors.accentSoft }]}>
+              <SymbolView name="bell.fill" size={22} tintColor={colors.accent} />
+            </View>
+            <View style={styles.infoCopy}>
+              <AppText variant="heading">{t('dailyReminder')}</AppText>
+              <AppText variant="caption" muted>{t('dailyReminderBody')}</AppText>
+            </View>
+            <Switch
+              accessibilityLabel={t('dailyReminder')}
+              disabled={reminderBusy}
+              value={reminderEnabled}
+              onValueChange={(enabled) => void toggleReminder(enabled)}
+              trackColor={{ false: colors.surfaceMuted, true: colors.sage }}
+              thumbColor={colors.surface}
+            />
+          </View>
+        </Card>
         <Card>
           <View style={styles.infoRow}>
             <View style={[styles.infoIcon, { backgroundColor: colors.sageSoft }]}>

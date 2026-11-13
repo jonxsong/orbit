@@ -3,12 +3,22 @@ import { ActivityIndicator, View } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import * as Notifications from 'expo-notifications';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useOrbitStore } from '../store/orbit-store';
 import { useAppTheme } from '../theme/theme';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 2, staleTime: 30_000 } },
+});
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldPlaySound: false,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
 });
 
 export default function RootLayout() {
@@ -43,6 +53,7 @@ export default function RootLayout() {
           <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="life-graph" options={{ animation: 'slide_from_right' }} />
+          <Stack.Screen name="task/[id]" options={{ animation: 'slide_from_right' }} />
           <Stack.Screen
             name="quick-add"
             options={{ presentation: 'formSheet', sheetGrabberVisible: true, sheetCornerRadius: 28 }}
