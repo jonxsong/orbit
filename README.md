@@ -18,6 +18,10 @@
   into the choices you make today.
 </p>
 
+<p align="center">
+  <a href="https://orbit-life-os.perkyaisle4.chatgpt.site"><strong>Explore the interactive Orbit website →</strong></a>
+</p>
+
 ---
 
 Orbit is an iPhone-first personal operating system that connects long-term goals to the tasks, habits, milestones, and reflections that shape each day. The mobile application is local-first: creating a task, completing a habit, or writing a reflection commits to SQLite before the interface reports success. Cloud sync and AI are optional enhancements.
