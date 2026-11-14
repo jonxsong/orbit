@@ -19,7 +19,7 @@
 </p>
 
 <p align="center">
-  <a href="https://orbit-life-os.perkyaisle4.chatgpt.site"><strong>Explore the interactive Orbit website →</strong></a>
+  <a href="https://orbit.jonzhang.dev"><strong>Explore the interactive Orbit website →</strong></a>
 </p>
 
 ---
